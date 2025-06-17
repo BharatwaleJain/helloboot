@@ -1,9 +1,11 @@
 package com.example.helloboot.controller;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import com.example.helloboot.entity.ListItem;
 import com.example.helloboot.repository.ListRepository;
+import com.example.helloboot.dto.PagedResponse;
+import org.springframework.data.domain.*;
+import org.springframework.data.web.PageableDefault;
 import java.util.*;
 import java.time.LocalDateTime;
 @RestController
@@ -37,15 +39,30 @@ public class ListController {
     }
     // Read all
     @GetMapping
-    public List<ListItem> all() {
-        return repo.findAll();
+    public PagedResponse<ListItem> all(@PageableDefault(
+        size=5,
+        sort="createdAt",
+        direction=Sort.Direction.DESC
+    ) Pageable pageable) {
+        return new PagedResponse<>(
+            repo.findAll(pageable)
+        );
     }
     // Read by category
     @GetMapping("/category/{category}")
-    public List<ListItem> byCategory(@PathVariable String category) {
-        return repo.findAll().stream()
-            .filter(item -> item.getCategory().equals(category))
-            .toList();
+    public PagedResponse<ListItem> byCategory(
+        @PathVariable String category,
+        @RequestParam(name = "q", required = false) String q,
+        @PageableDefault(
+            size=5,
+            sort="createdAt",
+            direction=Sort.Direction.DESC
+        ) Pageable pageable
+    ) {
+        Page<ListItem> page = (q == null || q.isBlank())
+            ? repo.findByCategory(category, pageable)
+            : repo.findByCategoryAndTitleContainingIgnoreCase(category, q, pageable);
+        return new PagedResponse<>(page);
     }
     // Read one
     @GetMapping("/{id}")
@@ -96,46 +113,4 @@ public class ListController {
             )
         );
     }
-    // private final Map<Long, List> db = new HashMap<>();
-    // private long nextId = 1;
-    // @PostMapping
-    // public ResponseEntity<List> create(@RequestBody List body) {
-    //     if (body.getTitle() == null || body.getCategory() == null)
-    //         return ResponseEntity.badRequest().build();
-    //     body.setId(nextId++);
-    //     body.setCreatedAt(LocalDateTime.now());
-    //     body.setUpdatedAt(LocalDateTime.now());
-    //     db.put(body.getId(), body);
-    //     return ResponseEntity.ok(body);
-    // }
-    // @GetMapping
-    // public Collection<List> all() {
-    //     return db.values();
-    // }
-    // @GetMapping("/{id}")
-    // public ResponseEntity<List> get(@PathVariable long id) {
-    //     List found = db.get(id);
-    //     if (found == null)
-    //         return ResponseEntity.notFound().build();
-    //     return ResponseEntity.ok(found);
-    // }
-    // @DeleteMapping("/{id}")
-    // public ResponseEntity<Void> delete(@PathVariable long id) {
-    //     List removed = db.remove(id);
-    //     if (removed == null)
-    //         return ResponseEntity.notFound().build();
-    //     return ResponseEntity.noContent().build();
-    // }
-    // @PutMapping("/{id}")
-    // public ResponseEntity<List> update(@PathVariable long id, @RequestBody List body) {
-    //     List existing  = db.get(id);
-    //     if (existing == null)
-    //         return ResponseEntity.notFound().build();
-    //     if (body.getTitle() == null || body.getCategory() == null)
-    //         return ResponseEntity.badRequest().build();
-    //     existing.setTitle(body.getTitle());
-    //     existing.setCategory(body.getCategory());
-    //     existing.setUpdatedAt(LocalDateTime.now());
-    //     return ResponseEntity.ok(existing);
-    // }
 }
