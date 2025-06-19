@@ -8,6 +8,7 @@ import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
 import java.util.*;
 import java.time.LocalDateTime;
+import org.springframework.format.annotation.DateTimeFormat;
 @RestController
 @RequestMapping("/list")
 @CrossOrigin(originPatterns = "*")
@@ -53,15 +54,29 @@ public class ListController {
     public PagedResponse<ListItem> byCategory(
         @PathVariable String category,
         @RequestParam(name = "q", required = false) String q,
+        @RequestParam(name = "startDate", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+        @RequestParam(name = "endDate", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
         @PageableDefault(
             size=5,
             sort="createdAt",
             direction=Sort.Direction.DESC
         ) Pageable pageable
     ) {
-        Page<ListItem> page = (q == null || q.isBlank())
-            ? repo.findByCategory(category, pageable)
-            : repo.findByCategoryAndTitleContainingIgnoreCase(category, q, pageable);
+        Page<ListItem> page;
+        boolean hasQ = q != null && !q.isBlank();
+        boolean hasDates = startDate != null && endDate != null;
+        if (hasQ && hasDates) {
+            page = repo.findByCategoryAndTitleContainingIgnoreCaseAndCreatedAtBetween(
+                category, q, startDate, endDate, pageable);
+        } else if (hasQ) {
+            page = repo.findByCategoryAndTitleContainingIgnoreCase(category, q, pageable);
+        } else if (hasDates) {
+            page = repo.findByCategoryAndCreatedAtBetween(category, startDate, endDate, pageable);
+        } else {
+            page = repo.findByCategory(category, pageable);
+        }
         return new PagedResponse<>(page);
     }
     // Read one
