@@ -1,10 +1,11 @@
 package com.example.helloboot.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
-import com.example.helloboot.entity.ListItem;
+import com.example.helloboot.entity.*;
 import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-public interface ListRepository extends JpaRepository<ListItem, Long> {
+public interface ListItemRepository extends JpaRepository<ListItem, Long> {
+    // Page<ListItem> findByUser(User user, Pageable pageable);
     Page<ListItem> findByCategory(
         String category,
         Pageable pageable

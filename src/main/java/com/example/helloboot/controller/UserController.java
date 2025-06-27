@@ -4,6 +4,7 @@ import com.example.helloboot.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 @RestController
 @RequestMapping("/")
 @CrossOrigin(originPatterns = "*") 
@@ -12,6 +13,14 @@ public class UserController {
     public UserController(UserService service) {
         this.service = service;
     }
+    
+    // Fetch all users (for admin)
+    @GetMapping("/users")
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        List<UserDto> users = service.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+
     // Login
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest body) {

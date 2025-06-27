@@ -1,6 +1,7 @@
 package com.example.helloboot.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+// @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Table(name = "list")
 public class ListItem {
@@ -15,6 +16,15 @@ public class ListItem {
     private LocalDateTime createdAt;
     @Column(name = "updated_at",  nullable = false, columnDefinition = "timestamp default current_timestamp")
     private LocalDateTime updatedAt;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+    public User getUser() {
+        return user;
+    }
+    public void setUser(User user) {
+        this.user = user;
+    }
     public ListItem() { }
     public Long getId() {
         return id;

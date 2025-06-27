@@ -1,35 +1,42 @@
 package com.example.helloboot.controller;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-import com.example.helloboot.entity.ListItem;
-import com.example.helloboot.repository.ListRepository;
-import com.example.helloboot.dto.PagedResponse;
+import com.example.helloboot.entity.*;
+import com.example.helloboot.repository.*;
+import com.example.helloboot.dto.*;
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
 import java.util.*;
 import java.time.LocalDateTime;
 import org.springframework.format.annotation.DateTimeFormat;
+
 @RestController
 @RequestMapping("/list")
 @CrossOrigin(originPatterns = "*")
 public class ListController {
-    private final ListRepository repo;
-    public ListController(ListRepository repo) {
+    private final ListItemRepository repo;
+    public ListController(ListItemRepository repo) {
         this.repo = repo;
     }
+
     // Create
     @PostMapping
     public ResponseEntity<Map<String,Object>> create(@RequestBody ListItem body) {
-        if (body.getTitle() == null || body.getCategory() == null)
+        if (body.getTitle() == null || body.getCategory() == null) {
             return ResponseEntity.badRequest()
                 .body(Map.of(
                     "success", false,
                     "message", "Failed to Add Item"
                 )
             );
-        body.setCreatedAt(LocalDateTime.now());
-        body.setUpdatedAt(body.getCreatedAt());
-        ListItem saved = repo.save(body);
+        }
+        ListItem item = new ListItem();
+        item.setTitle(body.getTitle());
+        item.setCategory(body.getCategory());
+        item.setCreatedAt(LocalDateTime.now());
+        item.setUpdatedAt(item.getCreatedAt());
+        // item.setUser(userOpt.get());
+        ListItem saved = repo.save(item);
         return ResponseEntity.ok(
             Map.of(
                 "success", true,
@@ -38,38 +45,29 @@ public class ListController {
             )
         );
     }
+
     // Read all
     @GetMapping
-    public PagedResponse<ListItem> all(@PageableDefault(
-        size=5,
-        sort="createdAt",
-        direction=Sort.Direction.DESC
-    ) Pageable pageable) {
+    public PagedResponse<ListItem> all(
+            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return new PagedResponse<>(
-            repo.findAll(pageable)
-        );
+                repo.findAll(pageable));
     }
+
     // Read by category
     @GetMapping("/category/{category}")
     public PagedResponse<ListItem> byCategory(
-        @PathVariable String category,
-        @RequestParam(name = "q", required = false) String q,
-        @RequestParam(name = "startDate", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-        @RequestParam(name = "endDate", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-        @PageableDefault(
-            size=5,
-            sort="createdAt",
-            direction=Sort.Direction.DESC
-        ) Pageable pageable
-    ) {
+            @PathVariable String category,
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(name = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(name = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Page<ListItem> page;
         boolean hasQ = q != null && !q.isBlank();
         boolean hasDates = startDate != null && endDate != null;
         if (hasQ && hasDates) {
             page = repo.findByCategoryAndTitleContainingIgnoreCaseAndCreatedAtBetween(
-                category, q, startDate, endDate, pageable);
+                    category, q, startDate, endDate, pageable);
         } else if (hasQ) {
             page = repo.findByCategoryAndTitleContainingIgnoreCase(category, q, pageable);
         } else if (hasDates) {
@@ -79,16 +77,18 @@ public class ListController {
         }
         return new PagedResponse<>(page);
     }
+
     // Read one
     @GetMapping("/{id}")
     public ResponseEntity<ListItem> get(@PathVariable long id) {
         return repo.findById(id)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
     // Update
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String,Object>> update(@PathVariable long id, @RequestBody ListItem body) {
+    public ResponseEntity<Map<String, Object>> update(@PathVariable long id, @RequestBody ListItem body) {
         return repo.findById(id).map(existing -> {
             if (body.getTitle() == null || body.getCategory() == null)
                 return null;
@@ -97,35 +97,29 @@ public class ListController {
             existing.setUpdatedAt(LocalDateTime.now());
             ListItem saved = repo.save(existing);
             return ResponseEntity.ok(
-                Map.of(
-                    "success", true,
-                    "message", "Item Updated Successfully",
-                    "item", saved
-                )
-            );
+                    Map.of(
+                            "success", true,
+                            "message", "Item Updated Successfully",
+                            "item", saved));
         }).orElseGet(() -> ResponseEntity
-            .status(HttpStatus.NOT_FOUND).body(Map.of(
-                    "success", false,
-                    "message", "Failed to Update Item"
-            ))
-        );
+                .status(HttpStatus.NOT_FOUND).body(Map.of(
+                        "success", false,
+                        "message", "Failed to Update Item")));
     }
+
     // Delete
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String,Object>> delete(@PathVariable long id) {
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable long id) {
         if (!repo.existsById(id))
             return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(Map.of(
-                    "success", false,
-                    "message", "Failed to Delete Item"
-                ));
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "success", false,
+                            "message", "Failed to Delete Item"));
         repo.deleteById(id);
         return ResponseEntity.ok(
-            Map.of(
-                "success", true,
-                "message", "Item Deleted Successfully"
-            )
-        );
+                Map.of(
+                        "success", true,
+                        "message", "Item Deleted Successfully"));
     }
 }

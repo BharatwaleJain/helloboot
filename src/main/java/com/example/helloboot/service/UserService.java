@@ -1,9 +1,11 @@
 package com.example.helloboot.service;
 import com.example.helloboot.dto.*;
-import com.example.helloboot.repository.UserRepository;
+import com.example.helloboot.entity.*;
+import com.example.helloboot.repository.*;
 import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
-import java.util.Base64;
+import java.util.*;
+import java.util.stream.Collectors;
 @Service
 public class UserService {
     private final UserRepository repo;
@@ -22,13 +24,17 @@ public class UserService {
                 return new LoginResponse(
                     true,
                     "Login Successful",
-                    token
+                    token,
+                    u.isAdmin(),
+                    u.getPermission()
                 );
             })
             .orElseGet(() ->
                 new LoginResponse(
                     false,
                     "Incorrect Credential, Try Again",
+                    null,
+                    null,
                     null
                 )
             );
@@ -38,20 +44,26 @@ public class UserService {
         if (token == null || token.isBlank())
             return new GenericResponse(
                 false,
-                "Session Expired"
+                "Session Expired",
+                null,
+                null
             );
         return repo.findByToken(token)
             .map(u -> {
                 repo.save(u);
                 return new GenericResponse(
                     true,
-                    "Logged Out Successfully"
+                    "Logged Out Successfully",
+                    null,
+                    null
                 );
             })
             .orElseGet(() ->
                 new GenericResponse(
                     false,
-                    "Session Expired"
+                    "Session Expired",
+                    null,
+                    null
                 )
             );
     }
@@ -60,15 +72,22 @@ public class UserService {
         if (token == null || token.isBlank())
             return new GenericResponse(
                 false,
-                "No Token Provided"
+                "No Token Provided",
+                null,
+                null
             );
-        boolean valid = repo.findByToken(token).isPresent();
+        Optional<User> userOpt = repo.findByToken(token);
+        boolean valid = userOpt.isPresent();
         return valid ? new GenericResponse(
             true,
-            "Session Authenticated"
+            "Session Authenticated",
+            userOpt.get().isAdmin(),
+            userOpt.get().getPermission()
         ) : new GenericResponse(
             false,
-            "Session Expired"
+            "Session Expired",
+            null,
+            null
         );
     }
     // Helper
@@ -76,5 +95,11 @@ public class UserService {
         byte[] bytes = new byte[40];
         random.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+    // Fetch all users (for admin)
+    public List<UserDto> getAllUsers() {
+        return repo.findAll().stream()
+            .map(UserDto::fromEntity)
+            .collect(Collectors.toList());
     }
 }
