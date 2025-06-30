@@ -1,5 +1,7 @@
 package com.example.helloboot.dto;
+
 import java.util.List;
+
 public class UserDto {
     private Long id;
     private String username;

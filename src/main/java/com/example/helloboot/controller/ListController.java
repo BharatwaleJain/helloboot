@@ -1,4 +1,5 @@
 package com.example.helloboot.controller;
+
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import com.example.helloboot.entity.*;
@@ -15,20 +16,19 @@ import org.springframework.format.annotation.DateTimeFormat;
 @CrossOrigin(originPatterns = "*")
 public class ListController {
     private final ListItemRepository repo;
+
     public ListController(ListItemRepository repo) {
         this.repo = repo;
     }
 
     // Create
     @PostMapping
-    public ResponseEntity<Map<String,Object>> create(@RequestBody ListItem body) {
+    public ResponseEntity<Map<String, Object>> create(@RequestBody ListItem body) {
         if (body.getTitle() == null || body.getCategory() == null) {
             return ResponseEntity.badRequest()
-                .body(Map.of(
-                    "success", false,
-                    "message", "Failed to Add Item"
-                )
-            );
+                    .body(Map.of(
+                            "success", false,
+                            "message", "Failed to Add Item"));
         }
         ListItem item = new ListItem();
         item.setTitle(body.getTitle());
@@ -37,12 +37,10 @@ public class ListController {
         item.setUpdatedAt(item.getCreatedAt());
         ListItem saved = repo.save(item);
         return ResponseEntity.ok(
-            Map.of(
-                "success", true,
-                "message", "Item Added Successfully",
-                "item", saved
-            )
-        );
+                Map.of(
+                        "success", true,
+                        "message", "Item Added Successfully",
+                        "item", saved));
     }
 
     // Read all
@@ -56,8 +54,7 @@ public class ListController {
                 item.getCategory(),
                 item.getUser() != null ? item.getUser().getName() : null,
                 item.getCreatedAt(),
-                item.getUpdatedAt()
-        ));
+                item.getUpdatedAt()));
         return new PagedResponse<>(responsePage);
     }
 
@@ -88,8 +85,7 @@ public class ListController {
                 item.getCategory(),
                 item.getUser() != null ? item.getUser().getName() : null,
                 item.getCreatedAt(),
-                item.getUpdatedAt()
-        ));
+                item.getUpdatedAt()));
         return new PagedResponse<>(responsePage);
     }
 

@@ -8,7 +8,8 @@ public class ListItemResponse {
     private java.time.LocalDateTime createdAt;
     private java.time.LocalDateTime updatedAt;
 
-    public ListItemResponse(Long id, String title, String category, String userName, java.time.LocalDateTime createdAt, java.time.LocalDateTime updatedAt) {
+    public ListItemResponse(Long id, String title, String category, String userName, java.time.LocalDateTime createdAt,
+            java.time.LocalDateTime updatedAt) {
         this.id = id;
         this.title = title;
         this.category = category;

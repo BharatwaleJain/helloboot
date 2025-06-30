@@ -1,5 +1,6 @@
 
 package com.example.helloboot.service;
+
 import com.example.helloboot.dto.*;
 import com.example.helloboot.entity.*;
 import com.example.helloboot.repository.*;
@@ -8,110 +9,108 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 @Service
 public class UserService {
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     private final UserRepository repo;
     private final SecureRandom random = new SecureRandom();
+
     public UserService(UserRepository repo) {
         this.repo = repo;
     }
-    // Login
-    public LoginResponse login(LoginRequest req) {
-        return repo.findByUsername(req.getUsername())
-            .filter(u -> encoder.matches(req.getPassword(), u.getPassword()))
-            .map(u -> {
-                String token = generateToken();
-                u.setToken(token);
-                u.setPassword(encoder.encode(req.getPassword()));
-                repo.save(u);
-                return new LoginResponse(
-                    true,
-                    "Login Successful",
-                    token,
-                    u.isAdmin(),
-                    u.getPermission()
-                );
-            })
-            .orElseGet(() ->
-                new LoginResponse(
-                    false,
-                    "Incorrect Credential, Try Again",
-                    null,
-                    null,
-                    null
-                )
-            );
-    }
-    // Logout
-    public GenericResponse logout(String token ) {
-        if (token == null || token.isBlank())
-            return new GenericResponse(
-                false,
-                "Session Expired",
-                null,
-                null
-            );
-        return repo.findByToken(token)
-            .map(u -> {
-                repo.save(u);
-                return new GenericResponse(
-                    true,
-                    "Logged Out Successfully",
-                    null,
-                    null
-                );
-            })
-            .orElseGet(() ->
-                new GenericResponse(
-                    false,
-                    "Session Expired",
-                    null,
-                    null
-                )
-            );
-    }
-    // Check
-    public GenericResponse check(String token) {
-        if (token == null || token.isBlank())
-            return new GenericResponse(
-                false,
-                "No Token Provided",
-                null,
-                null
-            );
-        Optional<User> userOpt = repo.findByToken(token);
-        boolean valid = userOpt.isPresent();
-        return valid ? new GenericResponse(
-            true,
-            "Session Authenticated",
-            userOpt.get().isAdmin(),
-            userOpt.get().getPermission()
-        ) : new GenericResponse(
-            false,
-            "Session Expired",
-            null,
-            null
-        );
-    }
-    // Helper
+
+    // Generate Token (for login)
     private String generateToken() {
         byte[] bytes = new byte[40];
         random.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
+
+    // Login
+    public LoginResponse login(LoginRequest req) {
+        return repo.findByUsername(req.getUsername())
+                .filter(u -> encoder.matches(req.getPassword(), u.getPassword()))
+                .map(u -> {
+                    String token = generateToken();
+                    u.setToken(token);
+                    u.setPassword(encoder.encode(req.getPassword()));
+                    repo.save(u);
+                    return new LoginResponse(
+                            true,
+                            "Login Successful",
+                            token,
+                            u.isAdmin(),
+                            u.getPermission());
+                })
+                .orElseGet(() -> new LoginResponse(
+                        false,
+                        "Incorrect Credential, Try Again",
+                        null,
+                        null,
+                        null));
+    }
+
+    // Logout
+    public GenericResponse logout(String token) {
+        if (token == null || token.isBlank())
+            return new GenericResponse(
+                    false,
+                    "Session Expired",
+                    null,
+                    null);
+        return repo.findByToken(token)
+                .map(u -> {
+                    repo.save(u);
+                    return new GenericResponse(
+                            true,
+                            "Logged Out Successfully",
+                            null,
+                            null);
+                })
+                .orElseGet(() -> new GenericResponse(
+                        false,
+                        "Session Expired",
+                        null,
+                        null));
+    }
+
+    // Check
+    public GenericResponse check(String token) {
+        if (token == null || token.isBlank())
+            return new GenericResponse(
+                    false,
+                    "No Token Provided",
+                    null,
+                    null);
+        Optional<User> userOpt = repo.findByToken(token);
+        boolean valid = userOpt.isPresent();
+        return valid ? new GenericResponse(
+                true,
+                "Session Authenticated",
+                userOpt.get().isAdmin(),
+                userOpt.get().getPermission())
+                : new GenericResponse(
+                        false,
+                        "Session Expired",
+                        null,
+                        null);
+    }
+
     // Fetch all users (for admin)
     public List<UserDto> getAllUsers() {
         return repo.findAll().stream()
-            .map(UserDto::fromEntity)
-            .collect(Collectors.toList());
+                .map(UserDto::fromEntity)
+                .collect(Collectors.toList());
     }
+
     // Fetch a user by ID (for admin)
     public UserDto getUserById(Long id) {
         return repo.findById(id)
-            .map(UserDto::fromEntity)
-            .orElse(null);
+                .map(UserDto::fromEntity)
+                .orElse(null);
     }
+
     // Create a new user (for admin)
     public UserDto createUser(UserDto userDto) {
         if (repo.existsByUsername(userDto.getUsername())) {
@@ -126,6 +125,7 @@ public class UserService {
         User saved = repo.save(user);
         return UserDto.fromEntity(saved);
     }
+
     // Update a user (for admin)
     public UserDto updateUser(Long id, UserDto userDto) {
         return repo.findById(id).map(user -> {
@@ -137,6 +137,7 @@ public class UserService {
         }).orElse(null);
     }
 
+    // Delete a user (for admin)
     public boolean deleteUser(Long id) {
         if (!repo.existsById(id))
             return false;

@@ -1,19 +1,22 @@
 package com.example.helloboot.controller;
+
 import com.example.helloboot.dto.*;
 import com.example.helloboot.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
+
 @RestController
 @RequestMapping("/")
-@CrossOrigin(originPatterns = "*") 
+@CrossOrigin(originPatterns = "*")
 public class UserController {
     private final UserService service;
+
     public UserController(UserService service) {
         this.service = service;
     }
-    
+
     // Fetch all users (for admin)
     @GetMapping("/users")
     public ResponseEntity<List<UserDto>> getAllUsers() {
@@ -36,10 +39,10 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("success", false, "message", e.getMessage()));
+                    .body(Map.of("success", false, "message", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("success", false, "message", "Failed to create user"));
+                    .body(Map.of("success", false, "message", "Failed to create user"));
         }
     }
 
@@ -56,7 +59,7 @@ public class UserController {
         boolean deleted = service.deleteUser(id);
         if (!deleted) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("success", false, "message", "User not found"));
+                    .body(Map.of("success", false, "message", "User not found"));
         }
         return ResponseEntity.ok(Map.of("success", true, "message", "User deleted successfully"));
     }
@@ -66,8 +69,8 @@ public class UserController {
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest body) {
         LoginResponse resp = service.login(body);
         return resp.isSuccess()
-            ? ResponseEntity.ok(resp)
-            : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(resp);
+                ? ResponseEntity.ok(resp)
+                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(resp);
     }
 
     // Logout
@@ -85,8 +88,10 @@ public class UserController {
         HttpStatus status = getStatus(body.getToken(), resp.isSuccess());
         return new ResponseEntity<>(resp, status);
     }
+
     private HttpStatus getStatus(String token, boolean success) {
-        if (success) return HttpStatus.OK;
+        if (success)
+            return HttpStatus.OK;
         if (token == null || token.isBlank())
             return HttpStatus.BAD_REQUEST;
         return HttpStatus.UNAUTHORIZED;
