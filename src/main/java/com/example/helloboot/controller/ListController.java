@@ -35,7 +35,6 @@ public class ListController {
         item.setCategory(body.getCategory());
         item.setCreatedAt(LocalDateTime.now());
         item.setUpdatedAt(item.getCreatedAt());
-        // item.setUser(userOpt.get());
         ListItem saved = repo.save(item);
         return ResponseEntity.ok(
             Map.of(
@@ -48,15 +47,23 @@ public class ListController {
 
     // Read all
     @GetMapping
-    public PagedResponse<ListItem> all(
+    public PagedResponse<ListItemResponse> all(
             @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return new PagedResponse<>(
-                repo.findAll(pageable));
+        Page<ListItem> page = repo.findAll(pageable);
+        Page<ListItemResponse> responsePage = page.map(item -> new ListItemResponse(
+                item.getId(),
+                item.getTitle(),
+                item.getCategory(),
+                item.getUser() != null ? item.getUser().getName() : null,
+                item.getCreatedAt(),
+                item.getUpdatedAt()
+        ));
+        return new PagedResponse<>(responsePage);
     }
 
     // Read by category
     @GetMapping("/category/{category}")
-    public PagedResponse<ListItem> byCategory(
+    public PagedResponse<ListItemResponse> byCategory(
             @PathVariable String category,
             @RequestParam(name = "q", required = false) String q,
             @RequestParam(name = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -75,7 +82,15 @@ public class ListController {
         } else {
             page = repo.findByCategory(category, pageable);
         }
-        return new PagedResponse<>(page);
+        Page<ListItemResponse> responsePage = page.map(item -> new ListItemResponse(
+                item.getId(),
+                item.getTitle(),
+                item.getCategory(),
+                item.getUser() != null ? item.getUser().getName() : null,
+                item.getCreatedAt(),
+                item.getUpdatedAt()
+        ));
+        return new PagedResponse<>(responsePage);
     }
 
     // Read one

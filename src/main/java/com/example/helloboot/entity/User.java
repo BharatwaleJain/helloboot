@@ -13,9 +13,9 @@ public class User {
     private String username;
     @Column(length = 25, nullable = false)
     private String name;
-    @Column(length = 10, nullable = false)
+    @Column(length = 100, nullable = false)
     private String password;
-    @Column(length = 100, unique = true, nullable = false)
+    @Column(length = 100, unique = true, nullable = true)
     private String token;
     @Column(nullable = false)
     private boolean admin;

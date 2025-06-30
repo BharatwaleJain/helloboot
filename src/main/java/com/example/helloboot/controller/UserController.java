@@ -4,7 +4,7 @@ import com.example.helloboot.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
+import java.util.*;
 @RestController
 @RequestMapping("/")
 @CrossOrigin(originPatterns = "*") 
@@ -21,6 +21,46 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
+    // Fetch a user by ID (for admin)
+    @GetMapping("/users/{id}")
+    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
+        UserDto user = service.getUserById(id);
+        return user != null ? ResponseEntity.ok(user) : ResponseEntity.notFound().build();
+    }
+
+    // Create a new user (for admin)
+    @PostMapping("/users")
+    public ResponseEntity<?> createUser(@RequestBody UserDto userDto) {
+        try {
+            UserDto createdUser = service.createUser(userDto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "Failed to create user"));
+        }
+    }
+
+    // Update a user (for admin)
+    @PutMapping("/users/{id}")
+    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {
+        UserDto updatedUser = service.updateUser(id, userDto);
+        return updatedUser != null ? ResponseEntity.ok(updatedUser) : ResponseEntity.notFound().build();
+    }
+
+    // Delete user (for admin)
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        boolean deleted = service.deleteUser(id);
+        if (!deleted) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("success", false, "message", "User not found"));
+        }
+        return ResponseEntity.ok(Map.of("success", true, "message", "User deleted successfully"));
+    }
+
     // Login
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest body) {
@@ -29,6 +69,7 @@ public class UserController {
             ? ResponseEntity.ok(resp)
             : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(resp);
     }
+
     // Logout
     @PostMapping("/logout")
     public ResponseEntity<GenericResponse> logout(@RequestBody TokenRequest body) {
@@ -36,6 +77,7 @@ public class UserController {
         HttpStatus status = getStatus(body.getToken(), resp.isSuccess());
         return new ResponseEntity<>(resp, status);
     }
+
     // Check
     @PostMapping("/check")
     public ResponseEntity<GenericResponse> check(@RequestBody TokenRequest body) {

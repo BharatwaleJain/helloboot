@@ -1,3 +1,4 @@
+
 package com.example.helloboot.service;
 import com.example.helloboot.dto.*;
 import com.example.helloboot.entity.*;
@@ -6,8 +7,10 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @Service
 public class UserService {
+    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     private final UserRepository repo;
     private final SecureRandom random = new SecureRandom();
     public UserService(UserRepository repo) {
@@ -16,10 +19,11 @@ public class UserService {
     // Login
     public LoginResponse login(LoginRequest req) {
         return repo.findByUsername(req.getUsername())
-            .filter(u -> u.getPassword().equals(req.getPassword()))
+            .filter(u -> encoder.matches(req.getPassword(), u.getPassword()))
             .map(u -> {
                 String token = generateToken();
                 u.setToken(token);
+                u.setPassword(encoder.encode(req.getPassword()));
                 repo.save(u);
                 return new LoginResponse(
                     true,
@@ -101,5 +105,42 @@ public class UserService {
         return repo.findAll().stream()
             .map(UserDto::fromEntity)
             .collect(Collectors.toList());
+    }
+    // Fetch a user by ID (for admin)
+    public UserDto getUserById(Long id) {
+        return repo.findById(id)
+            .map(UserDto::fromEntity)
+            .orElse(null);
+    }
+    // Create a new user (for admin)
+    public UserDto createUser(UserDto userDto) {
+        if (repo.existsByUsername(userDto.getUsername())) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+        User user = new User();
+        user.setUsername(userDto.getUsername());
+        user.setName(userDto.getName());
+        user.setAdmin(userDto.isAdmin());
+        user.setPermission(userDto.getPermission());
+        user.setPassword(encoder.encode(userDto.getPassword()));
+        User saved = repo.save(user);
+        return UserDto.fromEntity(saved);
+    }
+    // Update a user (for admin)
+    public UserDto updateUser(Long id, UserDto userDto) {
+        return repo.findById(id).map(user -> {
+            user.setName(userDto.getName());
+            user.setAdmin(userDto.isAdmin());
+            user.setPermission(userDto.getPermission());
+            User saved = repo.save(user);
+            return UserDto.fromEntity(saved);
+        }).orElse(null);
+    }
+
+    public boolean deleteUser(Long id) {
+        if (!repo.existsById(id))
+            return false;
+        repo.deleteById(id);
+        return true;
     }
 }

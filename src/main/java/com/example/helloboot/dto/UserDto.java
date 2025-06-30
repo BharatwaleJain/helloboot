@@ -4,6 +4,7 @@ public class UserDto {
     private Long id;
     private String username;
     private String name;
+    private String password;
     private boolean admin;
     private List<String> permission;
 
@@ -50,6 +51,14 @@ public class UserDto {
         this.permission = permission;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public static UserDto fromEntity(com.example.helloboot.entity.User user) {
         UserDto dto = new UserDto();
         dto.setId(user.getId());
@@ -57,6 +66,7 @@ public class UserDto {
         dto.setName(user.getName());
         dto.setAdmin(user.isAdmin());
         dto.setPermission(user.getPermission());
+        dto.setPassword(user.getPassword());
         return dto;
     }
 }
