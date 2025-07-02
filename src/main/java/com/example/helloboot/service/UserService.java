@@ -32,13 +32,20 @@ public class UserService {
         return repo.findByUsername(req.getUsername())
                 .filter(u -> encoder.matches(req.getPassword(), u.getPassword()))
                 .map(u -> {
+                    if (!u.isStatus()) {
+                        return new LoginResponse(
+                                false,
+                                "Login Disabled, Contact Admin",
+                                null,
+                                null,
+                                null);
+                    }
                     String token = generateToken();
                     u.setToken(token);
-                    u.setPassword(encoder.encode(req.getPassword()));
                     repo.save(u);
                     return new LoginResponse(
                             true,
-                            "Login Successful",
+                            "Login Successful, Welcome " + u.getName(),
                             token,
                             u.isAdmin(),
                             u.getPermission());
@@ -56,7 +63,7 @@ public class UserService {
         if (token == null || token.isBlank())
             return new GenericResponse(
                     false,
-                    "Session Expired",
+                    "Session Expired, Try Again",
                     null,
                     null);
         return repo.findByToken(token)
@@ -80,21 +87,23 @@ public class UserService {
         if (token == null || token.isBlank())
             return new GenericResponse(
                     false,
-                    "No Token Provided",
+                    "No Token Provided, Session Expired",
                     null,
                     null);
         Optional<User> userOpt = repo.findByToken(token);
-        boolean valid = userOpt.isPresent();
-        return valid ? new GenericResponse(
+        if (userOpt.isEmpty() || !userOpt.get().isStatus()) {
+            return new GenericResponse(
+                    false,
+                    userOpt.isPresent() ? "Login Disabled, Contact Admin" : "Session Expired, Try Again",
+                    null,
+                    null);
+        }
+        User user = userOpt.get();
+        return new GenericResponse(
                 true,
-                "Session Authenticated",
-                userOpt.get().isAdmin(),
-                userOpt.get().getPermission())
-                : new GenericResponse(
-                        false,
-                        "Session Expired",
-                        null,
-                        null);
+                "Session Authenticated, Welcome " + user.getName(),
+                user.isAdmin(),
+                user.getPermission());
     }
 
     // Fetch all users (for admin)
@@ -113,24 +122,43 @@ public class UserService {
 
     // Create a new user (for admin)
     public UserDto createUser(UserDto userDto) {
-        if (repo.existsByUsername(userDto.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
+        try {
+            if (repo.existsByUsername(userDto.getUsername())) {
+                throw new IllegalArgumentException("Username already exists");
+            }
+            User user = new User();
+            user.setUsername(userDto.getUsername());
+            user.setName(userDto.getName());
+            user.setPermission(userDto.getPermission());
+            user.setStatus(userDto.isStatus());
+            user.setPassword(encoder.encode(userDto.getPassword()));
+            User saved = repo.save(user);
+            return UserDto.fromEntity(saved);
+        } catch (Exception e) {
+            return null;
         }
-        User user = new User();
-        user.setUsername(userDto.getUsername());
-        user.setName(userDto.getName());
-        user.setAdmin(userDto.isAdmin());
-        user.setPermission(userDto.getPermission());
-        user.setPassword(encoder.encode(userDto.getPassword()));
-        User saved = repo.save(user);
-        return UserDto.fromEntity(saved);
+    }
+
+    // Enable/disable login (for admin)
+    public boolean updateUserStatus(Long userId) {
+        try {
+            Optional<User> userOpt = repo.findById(userId);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                user.setStatus(!user.isStatus());
+                repo.save(user);
+                return true;
+            }
+        } catch (Exception e) {
+            System.err.println("Error updating user status: " + e.getMessage());
+        }
+        return false;
     }
 
     // Update a user (for admin)
     public UserDto updateUser(Long id, UserDto userDto) {
         return repo.findById(id).map(user -> {
             user.setName(userDto.getName());
-            user.setAdmin(userDto.isAdmin());
             user.setPermission(userDto.getPermission());
             User saved = repo.save(user);
             return UserDto.fromEntity(saved);

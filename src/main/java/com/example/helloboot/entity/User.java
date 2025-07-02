@@ -17,10 +17,12 @@ public class User {
     private String name;
     @Column(length = 100, nullable = false)
     private String password;
-    @Column(length = 100, unique = true, nullable = false)
+    @Column(length = 100, unique = true, nullable = true)
     private String token;
     @Column(nullable = false)
     private boolean admin;
+    @Column(nullable = false)
+    private boolean status;
     @Column(name = "permission", columnDefinition = "text")
     @Convert(converter = StringListConverter.class)
     private List<String> permission;
@@ -69,6 +71,14 @@ public class User {
         if (admin) {
             this.setPermission(Arrays.asList("task", "read", "pending"));
         }
+    }
+
+    public boolean isStatus() {
+        return status;
+    }
+
+    public void setStatus(boolean status) {
+        this.status = status;
     }
 
     public String getName() {

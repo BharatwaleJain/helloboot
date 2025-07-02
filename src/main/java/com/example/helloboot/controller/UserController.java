@@ -46,6 +46,15 @@ public class UserController {
         }
     }
 
+    // Enable/disable login (for admin)
+    @PutMapping("/users/{id}/status")
+    public ResponseEntity<?> updateStatus(@PathVariable Long id) {
+        boolean updated = service.updateUserStatus(id);
+        if (updated)
+            return ResponseEntity.ok().build();
+        return ResponseEntity.notFound().build();
+    }
+
     // Update a user (for admin)
     @PutMapping("/users/{id}")
     public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {

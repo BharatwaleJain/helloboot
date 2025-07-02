@@ -8,6 +8,7 @@ public class UserDto {
     private String name;
     private String password;
     private boolean admin;
+    private boolean status;
     private List<String> permission;
 
     public UserDto() {
@@ -45,6 +46,14 @@ public class UserDto {
         this.admin = admin;
     }
 
+    public boolean isStatus() {
+        return status;
+    }
+
+    public void setStatus(boolean status) {
+        this.status = status;
+    }
+
     public List<String> getPermission() {
         return permission;
     }
@@ -67,6 +76,7 @@ public class UserDto {
         dto.setUsername(user.getUsername());
         dto.setName(user.getName());
         dto.setAdmin(user.isAdmin());
+        dto.setStatus(user.isStatus());
         dto.setPermission(user.getPermission());
         dto.setPassword(user.getPassword());
         return dto;
