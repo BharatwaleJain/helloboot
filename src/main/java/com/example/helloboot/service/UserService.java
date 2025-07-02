@@ -45,7 +45,36 @@ public class UserService {
                     repo.save(u);
                     return new LoginResponse(
                             true,
-                            "Login Successful, Welcome " + u.getName(),
+                            "Login Successful, Welcome User",
+                            token,
+                            u.isAdmin(),
+                            u.getPermission());
+                })
+                .orElseGet(() -> new LoginResponse(
+                        false,
+                        "Incorrect Credential, Try Again",
+                        null,
+                        null,
+                        null));
+    }
+    public LoginResponse login2(LoginRequest req) {
+        return repo.findByName(req.getName())
+                .filter(u -> encoder.matches(req.getPassword(), u.getPassword()))
+                .map(u -> {
+                    if (!u.isStatus()) {
+                        return new LoginResponse(
+                                false,
+                                "Login Disabled, Contact Admin",
+                                null,
+                                null,
+                                null);
+                    }
+                    String token = generateToken();
+                    u.setToken(token);
+                    repo.save(u);
+                    return new LoginResponse(
+                            true,
+                            "Login Successful, Welcome User",
                             token,
                             u.isAdmin(),
                             u.getPermission());
@@ -101,7 +130,7 @@ public class UserService {
         User user = userOpt.get();
         return new GenericResponse(
                 true,
-                "Session Authenticated, Welcome " + user.getName(),
+                "Session Authenticated, Welcome Back",
                 user.isAdmin(),
                 user.getPermission());
     }
@@ -122,21 +151,17 @@ public class UserService {
 
     // Create a new user (for admin)
     public UserDto createUser(UserDto userDto) {
-        try {
-            if (repo.existsByUsername(userDto.getUsername())) {
-                throw new IllegalArgumentException("Username already exists");
-            }
-            User user = new User();
-            user.setUsername(userDto.getUsername());
-            user.setName(userDto.getName());
-            user.setPermission(userDto.getPermission());
-            user.setStatus(userDto.isStatus());
-            user.setPassword(encoder.encode(userDto.getPassword()));
-            User saved = repo.save(user);
-            return UserDto.fromEntity(saved);
-        } catch (Exception e) {
-            return null;
+        if (repo.existsByUsername(userDto.getUsername())) {
+            throw new IllegalArgumentException("Username already exists");
         }
+        User user = new User();
+        user.setUsername(userDto.getUsername());
+        user.setName(userDto.getName());
+        user.setPermission(userDto.getPermission());
+        user.setStatus(userDto.isStatus());
+        user.setPassword(encoder.encode(userDto.getPassword()));
+        User saved = repo.save(user);
+        return UserDto.fromEntity(saved);
     }
 
     // Enable/disable login (for admin)

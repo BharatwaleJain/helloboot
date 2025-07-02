@@ -3,6 +3,7 @@ package com.example.helloboot.dto;
 public class LoginRequest {
     private String username;
     private String password;
+    private String name;
 
     public String getUsername() {
         return username;
@@ -18,5 +19,13 @@ public class LoginRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

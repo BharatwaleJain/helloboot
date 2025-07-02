@@ -81,6 +81,13 @@ public class UserController {
                 ? ResponseEntity.ok(resp)
                 : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(resp);
     }
+    @PostMapping("/login2")
+    public ResponseEntity<LoginResponse> login2(@RequestBody LoginRequest body) {
+        LoginResponse resp = service.login2(body);
+        return resp.isSuccess()
+                ? ResponseEntity.ok(resp)
+                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(resp);
+    }
 
     // Logout
     @PostMapping("/logout")
